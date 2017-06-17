@@ -1,5 +1,6 @@
 package de.luhmer.owncloudnewsreader.di;
 
+import android.accounts.Account;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
@@ -22,6 +23,8 @@ import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import java.lang.reflect.Type;
 import java.util.List;
 
+import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
+import de.luhmer.owncloud.accountimporter.helper.SingleAccount;
 import de.luhmer.owncloudnewsreader.SettingsActivity;
 import de.luhmer.owncloudnewsreader.database.model.Feed;
 import de.luhmer.owncloudnewsreader.database.model.Folder;
@@ -57,7 +60,37 @@ public class ApiProvider {
         initApi();
     }
 
-    public void initApi() {
+    public boolean initApi() {
+        Account account = AccountImporter.GetCurrentAccount(context);
+        return initApi(account);
+    }
+
+    public boolean initApi(Account account) {
+        try {
+            SingleAccount singleAccount = AccountImporter.BlockingGetAuthToken(context, account);
+            String username   = singleAccount.username;
+            String password   = singleAccount.password;
+            String baseUrlStr = singleAccount.url;
+
+            HttpUrl baseUrl = HttpUrl.parse(baseUrlStr).newBuilder()
+                    .addPathSegments("index.php/apps/news/api/v1-2/")
+                    .build();
+
+            Log.d("ApiModule", "HttpUrl: " + baseUrl.toString());
+
+            setUpRetrofit(baseUrl, username, password);
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            //Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+
+        //TODO we need to update the OkHttpSSLClient to read the CB_DISABLE_HOSTNAME_VERIFICATION_STRING variable from the new account as well!
+
+        /*
         String username   = mPrefs.getString(SettingsActivity.EDT_USERNAME_STRING, "");
         String password   = mPrefs.getString(SettingsActivity.EDT_PASSWORD_STRING, "");
         String baseUrlStr = mPrefs.getString(SettingsActivity.EDT_OWNCLOUDROOTPATH_STRING, "https://luhmer.de"); // We need to provide some sort of default URL here..
@@ -67,6 +100,11 @@ public class ApiProvider {
 
         Log.d("ApiModule", "HttpUrl: " + baseUrl.toString());
 
+        setUpRetrofit(baseUrl, username, password);
+        */
+    }
+
+    private void setUpRetrofit(HttpUrl baseUrl, String username, String password) {
         Type feedList = new TypeToken<List<Feed>>() {}.getType();
         Type folderList = new TypeToken<List<Folder>>() {}.getType();
         Type rssItemsList = new TypeToken<List<RssItem>>() {}.getType();

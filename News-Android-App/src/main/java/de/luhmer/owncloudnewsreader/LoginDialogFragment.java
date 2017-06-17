@@ -21,6 +21,7 @@
 
 package de.luhmer.owncloudnewsreader;
 
+import android.accounts.Account;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -49,6 +50,7 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -59,7 +61,7 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import de.luhmer.owncloud.accountimporter.ImportAccountsDialogFragment;
 import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
-import de.luhmer.owncloud.accountimporter.helper.OwnCloudAccount;
+import de.luhmer.owncloud.accountimporter.helper.SingleAccount;
 import de.luhmer.owncloud.accountimporter.interfaces.IAccountImport;
 import de.luhmer.owncloudnewsreader.authentication.AuthenticatorActivity;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
@@ -71,6 +73,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
+import okhttp3.HttpUrl;
 
 /**
  * Activity which displays a login screen to the user, offering registration as
@@ -108,16 +111,12 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 	@Bind(R.id.cb_AllowAllSSLCertificates) CheckBox mCbDisableHostnameVerificationView;
     @Bind(R.id.imgView_ShowPassword) ImageView mImageViewShowPwd;
 
-    boolean mPasswordVisible = false;
+    private boolean mPasswordVisible = false;
+    private Account importetAccount  = null;
 
-    @Override
-    public void accountAccessGranted(OwnCloudAccount account) {
-        mUsernameView.setText(account.getUsername());
-        mPasswordView.setText(account.getPassword());
-        mOc_root_path_View.setText(account.getUrl());
-    }
 
-    public interface LoginSuccessfullListener {
+
+	public interface LoginSuccessfullListener {
 		void LoginSucceeded();
 	}
 	LoginSuccessfullListener listener;
@@ -147,13 +146,11 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
     @Override
     public void onDestroy() {
         super.onDestroy();
-
-
     }
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-		showImportAccountButton = AccountImporter.findAccounts(getActivity()).size() > 0;
+		showImportAccountButton = AccountImporter.AccountsToImportAvailable(getActivity());
 
 		//setRetainInstance(true);
 
@@ -189,6 +186,12 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
  		mUsernameView.setText(mUsername);
  		mPasswordView.setText(mPassword);
  		mOc_root_path_View.setText(mOc_root_path);
+
+        // For demo
+        mUsernameView.setEnabled(false);
+        mPasswordView.setEnabled(false);
+        mOc_root_path_View.setEnabled(false);
+        this.importetAccount = AccountImporter.GetCurrentAccount(getActivity());
 
  		mCbDisableHostnameVerificationView.setChecked(mCbDisableHostnameVerification);
  		mCbDisableHostnameVerificationView.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -233,6 +236,21 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 				}
 			});
 		}
+	}
+
+	@Override
+	public void accountAccessGranted(final Account account) {
+        try {
+            SingleAccount singleAccount = AccountImporter.BlockingGetAuthToken(getActivity(), account);
+            mUsernameView.setText(singleAccount.username);
+            mPasswordView.setText(singleAccount.password);
+            mOc_root_path_View.setText(singleAccount.url);
+            mCbDisableHostnameVerificationView.setChecked(singleAccount.disableHostnameVerification);
+            this.importetAccount = account;
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(getActivity(), e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
 	}
 
 	@Override
@@ -348,7 +366,7 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
             editor.commit();
 
             // Re-init API
-            mApi.initApi();
+            mApi.initApi(importetAccount);
 
             //((NewsReaderApplication) getActivity().getApplication()).initDaggerAppComponent();
             //((NewsReaderApplication) getActivity().getApplication()).getAppComponent().injectFragment(this);
@@ -399,6 +417,11 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 									   Log.v(TAG, "onComplete() called");
 
                                        if(loginSuccessful) {
+
+                                           if(importetAccount != null) {
+                                               AccountImporter.SetCurrentAccount(getActivity(), importetAccount);
+                                           }
+
                                            //Reset Database
                                            DatabaseConnectionOrm dbConn = new DatabaseConnectionOrm(getActivity());
                                            dbConn.resetDatabase();
