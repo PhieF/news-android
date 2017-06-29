@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
 import de.luhmer.owncloudnewsreader.Constants;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
 import de.luhmer.owncloudnewsreader.database.model.RssItem;
@@ -83,7 +84,9 @@ public class RssItemObservable implements Publisher<Integer> {
 
             do {
                 Log.v(TAG, "offset=" + offset + ",  requestCount=" + requestCount + "");
-                List<RssItem> buffer = (mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true).execute().body());
+                //List<RssItem> buffer = (mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true).execute().body());
+                List<RssItem> buffer = API_Nextcloud.GetRssItems(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true);
+                //List<RssItem> buffer = (mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true).execute().body());
 
                 requestCount = 0;
                 if(buffer != null) {
@@ -106,7 +109,8 @@ public class RssItemObservable implements Publisher<Integer> {
 
             do {
                 offset = mDbConn.getLowestItemId(true);
-                List<RssItem> buffer = mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL_STARRED.toString()), 0, false, true).execute().body();
+                List<RssItem> buffer = API_Nextcloud.GetRssItems(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL_STARRED.toString()), 0, false, true);
+                //List<RssItem> buffer = mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL_STARRED.toString()), 0, false, true).execute().body();
 
                 requestCount = 0;
                 if(buffer != null) {

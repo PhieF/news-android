@@ -34,15 +34,20 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.gson.reflect.TypeToken;
+
 import org.apache.commons.lang3.time.StopWatch;
 import org.greenrobot.eventbus.EventBus;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
+import de.luhmer.owncloud.accountimporter.helper.NextcloudRequest;
 import de.luhmer.owncloudnewsreader.ListView.SubscriptionExpandableListAdapter;
 import de.luhmer.owncloudnewsreader.NewsReaderApplication;
 import de.luhmer.owncloudnewsreader.R;
@@ -50,10 +55,14 @@ import de.luhmer.owncloudnewsreader.SettingsActivity;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
 import de.luhmer.owncloudnewsreader.database.model.Feed;
 import de.luhmer.owncloudnewsreader.database.model.Folder;
+import de.luhmer.owncloudnewsreader.database.model.RssItem;
 import de.luhmer.owncloudnewsreader.di.ApiProvider;
 import de.luhmer.owncloudnewsreader.helper.NotificationManagerNewsReader;
 import de.luhmer.owncloudnewsreader.helper.TeslaUnreadManager;
+import de.luhmer.owncloudnewsreader.model.NextcloudNewsVersion;
+import de.luhmer.owncloudnewsreader.model.UserInfo;
 import de.luhmer.owncloudnewsreader.reader.InsertIntoDatabase;
+import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
 import de.luhmer.owncloudnewsreader.reader.nextcloud.ItemStateSync;
 import de.luhmer.owncloudnewsreader.reader.nextcloud.RssItemObservable;
 import de.luhmer.owncloudnewsreader.services.events.SyncFailedEvent;
@@ -188,6 +197,7 @@ public class OwnCloudSyncService extends Service {
                }).subscribeOn(Schedulers.newThread());
 
         // First sync Feeds and Folders and rss item states (in parallel)
+        /*
         Observable<List<Folder>> folderObservable = mApi
                 .getAPI()
                 .folders()
@@ -197,6 +207,16 @@ public class OwnCloudSyncService extends Service {
                 .getAPI()
                 .feeds()
                 .subscribeOn(Schedulers.newThread());
+        */
+
+        Observable<List<Folder>>  folderObservable = API_Nextcloud
+                .GetFolders()
+                .subscribeOn(Schedulers.newThread());
+
+        Observable<List<Feed>> feedsObservable = API_Nextcloud
+                .GetFeeds()
+                .subscribeOn(Schedulers.newThread());
+
 
         // Wait for both results
         Observable<SyncResult> combined = Observable.zip(folderObservable, feedsObservable, rssStateSync, new Function3<List<Folder>, List<Feed>, Boolean, SyncResult>() {

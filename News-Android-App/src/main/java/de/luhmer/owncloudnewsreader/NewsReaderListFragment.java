@@ -60,6 +60,7 @@ import de.luhmer.owncloudnewsreader.helper.ThemeChooser;
 import de.luhmer.owncloudnewsreader.interfaces.ExpListTextClicked;
 import de.luhmer.owncloudnewsreader.model.FolderSubscribtionItem;
 import de.luhmer.owncloudnewsreader.model.UserInfo;
+import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
@@ -277,7 +278,8 @@ public class NewsReaderListFragment extends Fragment implements OnCreateContextM
     }
 
     public void startAsyncTaskGetUserInfo() {
-        mApi.getAPI().user()
+        //mApi.getAPI().user()
+        API_Nextcloud.GetUserInfo()
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<UserInfo>() {

@@ -28,6 +28,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
@@ -39,6 +40,7 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -52,8 +54,19 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -65,8 +78,16 @@ import de.luhmer.owncloud.accountimporter.helper.SingleAccount;
 import de.luhmer.owncloud.accountimporter.interfaces.IAccountImport;
 import de.luhmer.owncloudnewsreader.authentication.AuthenticatorActivity;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
+import de.luhmer.owncloudnewsreader.database.model.Feed;
+import de.luhmer.owncloudnewsreader.database.model.Folder;
+import de.luhmer.owncloudnewsreader.database.model.RssItem;
 import de.luhmer.owncloudnewsreader.di.ApiProvider;
+import de.luhmer.owncloudnewsreader.helper.GsonConfig;
 import de.luhmer.owncloudnewsreader.model.NextcloudNewsVersion;
+import de.luhmer.owncloudnewsreader.model.UserInfo;
+import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
+import de.luhmer.owncloudnewsreader.reader.nextcloud.NextcloudDeserializer;
+import de.luhmer.owncloudnewsreader.reader.nextcloud.Types;
 import de.luhmer.owncloudnewsreader.ssl.OkHttpSSLClient;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -113,6 +134,7 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 
     private boolean mPasswordVisible = false;
     private Account importetAccount  = null;
+    private AccountImporter accountImporter;
 
 
 
@@ -150,6 +172,7 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        accountImporter = new AccountImporter();
 		showImportAccountButton = AccountImporter.AccountsToImportAvailable(getActivity());
 
 		//setRetainInstance(true);
@@ -214,6 +237,7 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 	@Override
 	public void onStart() {
 		super.onStart();
+
 		final AlertDialog dialog = (AlertDialog) getDialog();
 		// Override the onClickListeners, as the default implementation would dismiss the dialog
 		if (dialog != null) {
@@ -377,7 +401,8 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
             mDialogLogin.show();
 
 
-			mApi.getAPI().version()
+			//mApi.getAPI().version()
+            API_Nextcloud.GetNextcloudNewsVersion()
 					.subscribeOn(Schedulers.newThread())
 					.observeOn(AndroidSchedulers.mainThread())
 					.subscribe(new Observer<NextcloudNewsVersion>() {
@@ -405,6 +430,7 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 								   public void onError(@NonNull Throwable e) {
                                        mDialogLogin.dismiss();
 									   Log.v(TAG, "onError() called with: e = [" + e + "]");
+									   e.printStackTrace();
 
                                        Throwable t = OkHttpSSLClient.HandleExceptions(e);
                                        ShowAlertDialog(getString(R.string.login_dialog_title_error), t.getMessage(), getActivity());

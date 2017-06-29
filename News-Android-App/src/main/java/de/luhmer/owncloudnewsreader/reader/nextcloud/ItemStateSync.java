@@ -46,13 +46,17 @@ public class ItemStateSync {
 
         switch(tag) {
             case MARK_ITEM_AS_READ:
-                return api.markItemsRead(new ItemIds(itemIds)).execute().isSuccessful();
+                return API_Nextcloud.markItemsRead(new ItemIds(itemIds));
+                //return api.markItemsRead(new ItemIds(itemIds)).execute().isSuccessful();
             case MARK_ITEM_AS_UNREAD:
-                return api.markItemsUnread(new ItemIds(itemIds)).execute().isSuccessful();
+                return API_Nextcloud.markItemsUnread(new ItemIds(itemIds));
+                //return api.markItemsUnread(new ItemIds(itemIds)).execute().isSuccessful();
             case MARK_ITEM_AS_STARRED:
-                return api.markItemsStarred(new ItemMap(itemIds, dbConn)).execute().isSuccessful();
+                return API_Nextcloud.markItemsStarred(new ItemIds(itemIds));
+                //return api.markItemsStarred(new ItemMap(itemIds, dbConn)).execute().isSuccessful();
             case MARK_ITEM_AS_UNSTARRED:
-                return api.markItemsUnstarred(new ItemMap(itemIds, dbConn)).execute().isSuccessful();
+                return API_Nextcloud.markItemsUnstarred(new ItemIds(itemIds));
+                //return api.markItemsUnstarred(new ItemMap(itemIds, dbConn)).execute().isSuccessful();
         }
         return false;
     }

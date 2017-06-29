@@ -81,6 +81,7 @@ import de.luhmer.owncloudnewsreader.events.podcast.FeedPanelSlideEvent;
 import de.luhmer.owncloudnewsreader.helper.DatabaseUtils;
 import de.luhmer.owncloudnewsreader.helper.PostDelayHandler;
 import de.luhmer.owncloudnewsreader.helper.ThemeChooser;
+import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
 import de.luhmer.owncloudnewsreader.reader.nextcloud.RssItemObservable;
 import de.luhmer.owncloudnewsreader.services.DownloadImagesService;
 import de.luhmer.owncloudnewsreader.services.OwnCloudSyncService;
@@ -779,7 +780,8 @@ public class NewsReaderListActivity extends PodcastFragmentActivity implements
                     long id = rssItem.getFeedId();
                     int type = 0; // the type of the query (Feed: 0, Folder: 1, Starred: 2, All: 3)
 
-                    List<RssItem> buffer = mApi.getAPI().items(100, offset, type, id, true, false).execute().body();
+                    //List<RssItem> buffer = mApi.getAPI().items(100, offset, type, id, true, false).execute().body();
+					List<RssItem> buffer = API_Nextcloud.GetRssItems(100, offset, type, id, true, false);
                     RssItemObservable.performDatabaseBatchInsert(dbConn, buffer);
                 }
             })
