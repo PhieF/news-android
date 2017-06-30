@@ -29,14 +29,6 @@ import retrofit2.http.Streaming;
 public interface API {
 
 
-    @GET("items/updated")
-    @Streaming
-    Observable<ResponseBody> updatedItems(
-            @Query("lastModified") long lastModified,
-            @Query("type") int type,
-            @Query("id") long id
-    );
-
 
 
 }

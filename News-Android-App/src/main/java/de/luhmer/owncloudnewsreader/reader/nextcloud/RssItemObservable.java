@@ -11,8 +11,12 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -133,13 +137,20 @@ public class RssItemObservable implements Publisher<Integer> {
             long highestItemIdBeforeSync = mDbConn.getHighestItemId();
 
             //Get all updated items
+            /*
             mApi.updatedItems(lastModified+1, Integer.valueOf(FeedItemTags.ALL.toString()), highestItemIdBeforeSync)
-                    .flatMap(new Function<ResponseBody, ObservableSource<RssItem>>() {
-                        @Override
-                        public ObservableSource<RssItem> apply(@NonNull ResponseBody responseBody) throws Exception {
-                            return events(responseBody.source());
+                .flatMap(new Function<ResponseBody, ObservableSource<RssItem>>() {
+                    @Override
+                    public ObservableSource<RssItem> apply(@NonNull ResponseBody responseBody) throws Exception {
+                        return events(responseBody.source());
                         }
-                    })
+                })
+            */
+
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            API_Nextcloud.UpdatedItems(lastModified+1, Integer.valueOf(FeedItemTags.ALL.toString()), highestItemIdBeforeSync, os);
+
+            events(new ByteArrayInputStream(os.toByteArray()))
                     .subscribe(new Observer<RssItem>() {
                         int totalUpdatedUnreadItemCount = 0;
                         final int bufferSize = 150;
@@ -186,12 +197,12 @@ public class RssItemObservable implements Publisher<Integer> {
         return true;
     }
 
-    public static Observable<RssItem> events(final BufferedSource source) {
+    public static Observable<RssItem> events(final InputStream source) {
         return Observable.create(new ObservableOnSubscribe<RssItem>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<RssItem> e) throws Exception {
                 try {
-                    InputStreamReader isr = new InputStreamReader(source.inputStream());
+                    InputStreamReader isr = new InputStreamReader(source);
                     BufferedReader br = new BufferedReader(isr);
                     JsonReader reader = new JsonReader(br);
 

@@ -7,11 +7,14 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
 import de.luhmer.owncloud.accountimporter.helper.NextcloudAPI;
@@ -54,8 +57,7 @@ public class API_Nextcloud {
                 //.setRequestBody(chain.request().body())
                 .build();
 
-        List<Folder> result = NextcloudAPI.getInstance().performRequest(type, request);
-        return Observable.just(result);
+        return NextcloudAPI.getInstance().performRequestObservable(type, request);
     }
 
     public static Observable<List<Feed>> GetFeeds() {
@@ -68,8 +70,7 @@ public class API_Nextcloud {
                 //.setRequestBody(chain.request().body())
                 .build();
 
-        List<Feed> result = NextcloudAPI.getInstance().performRequest(type, request);
-        return Observable.just(result);
+        return NextcloudAPI.getInstance().performRequestObservable(type, request);
     }
 
     public static List<RssItem> GetRssItems(long batchSize, long offset, int type, long id, boolean getRead, boolean oldestFirst) {
@@ -96,7 +97,7 @@ public class API_Nextcloud {
     }
 
     public static Observable<UserInfo> GetUserInfo() {
-        Type type = UserInfo.class;
+        final Type type = UserInfo.class;
 
         NextcloudRequest request = new NextcloudRequest.Builder()
                 //.setHeader(chain.request().headers().toMultimap())
@@ -105,8 +106,7 @@ public class API_Nextcloud {
                 //.setRequestBody(chain.request().body())
                 .build();
 
-        UserInfo result = NextcloudAPI.getInstance().performRequest(type, request);
-        return Observable.just(result);
+        return NextcloudAPI.getInstance().performRequestObservable(type, request);
     }
 
     public static Observable<NextcloudStatus> GetStatus() {
@@ -119,8 +119,7 @@ public class API_Nextcloud {
                 //.setRequestBody(chain.request().body())
                 .build();
 
-        NextcloudStatus result = NextcloudAPI.getInstance().performRequest(type, request);
-        return Observable.just(result);
+        return NextcloudAPI.getInstance().performRequestObservable(type, request);
     }
 
     public static Observable<NextcloudNewsVersion> GetNextcloudNewsVersion() {
@@ -133,8 +132,7 @@ public class API_Nextcloud {
                 //.setRequestBody(chain.request().body())
                 .build();
 
-        NextcloudNewsVersion result = NextcloudAPI.getInstance().performRequest(type, request);
-        return Observable.just(result);
+        return NextcloudAPI.getInstance().performRequest(type, request);
     }
 
 
@@ -173,19 +171,19 @@ public class API_Nextcloud {
                 .setMethod("DELETE")
                 .setUrl(mApiEndpoint + "feeds/" + feedId)
                 .build();
-        return NextcloudAPI.getInstance().performRequest(null, request);
+        return NextcloudAPI.getInstance().performRequest(Void.class, request);
     }
 
 
 
-    /*
-    public static Observable<ResponseBody> updatedItems(long lastModified, int type, long id) {
+
+    public static void UpdatedItems(long lastModified, int type, long id, ByteArrayOutputStream os) {
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("lastModified", String.valueOf(lastModified));
         parameters.put("type", String.valueOf(type));
         parameters.put("id", String.valueOf(id));
 
-        Type type = RssItem.class;
+        Type typeR = RssItem.class;
 
         NextcloudRequest request = new NextcloudRequest.Builder()
                 .setMethod("GET")
@@ -193,10 +191,9 @@ public class API_Nextcloud {
                 //.setRequestBody(chain.request().body())
                 .build();
 
-        //NextcloudNewsVersion result = NextcloudAPI.getInstance().performRequest(type, request);
-        //return Observable.just(result);
-        return null;
-    }*/
+
+        NextcloudAPI.getInstance().performRequest(typeR, request, os);
+    }
 
 
 
@@ -225,7 +222,7 @@ public class API_Nextcloud {
                 .setUrl(mApiEndpoint + endpoint)
                 .setRequestBody(body)
                 .build();
-        NextcloudAPI.getInstance().performRequest(null, request);
+        NextcloudAPI.getInstance().performRequest(Void.class, request);
         return true; // TODO check if success!
     }
 
