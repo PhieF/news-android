@@ -2,12 +2,14 @@ package de.luhmer.owncloudnewsreader.reader.nextcloud;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -177,22 +179,21 @@ public class API_Nextcloud {
 
 
 
-    public static void UpdatedItems(long lastModified, int type, long id, ByteArrayOutputStream os) {
+    public static ParcelFileDescriptor UpdatedItems(long lastModified, int type, long id) {
         HashMap<String, String> parameters = new HashMap<>();
         parameters.put("lastModified", String.valueOf(lastModified));
         parameters.put("type", String.valueOf(type));
         parameters.put("id", String.valueOf(id));
 
-        Type typeR = RssItem.class;
-
         NextcloudRequest request = new NextcloudRequest.Builder()
                 .setMethod("GET")
                 .setUrl(mApiEndpoint + "items/updated")
-                //.setRequestBody(chain.request().body())
+                .setParameter(parameters)
                 .build();
 
 
-        NextcloudAPI.getInstance().performRequest(typeR, request, os);
+        return NextcloudAPI.getInstance().performNetworkRequest(request);
+
     }
 
 

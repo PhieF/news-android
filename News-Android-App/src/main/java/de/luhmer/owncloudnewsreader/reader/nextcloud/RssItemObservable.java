@@ -1,6 +1,7 @@
 package de.luhmer.owncloudnewsreader.reader.nextcloud;
 
 import android.content.SharedPreferences;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
@@ -147,10 +148,8 @@ public class RssItemObservable implements Publisher<Integer> {
                 })
             */
 
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            API_Nextcloud.UpdatedItems(lastModified+1, Integer.valueOf(FeedItemTags.ALL.toString()), highestItemIdBeforeSync, os);
-
-            events(new ByteArrayInputStream(os.toByteArray()))
+            ParcelFileDescriptor is = API_Nextcloud.UpdatedItems(lastModified+1, Integer.valueOf(FeedItemTags.ALL.toString()), highestItemIdBeforeSync);
+            InputStreamToObservable(is)
                     .subscribe(new Observer<RssItem>() {
                         int totalUpdatedUnreadItemCount = 0;
                         final int bufferSize = 150;
@@ -197,12 +196,13 @@ public class RssItemObservable implements Publisher<Integer> {
         return true;
     }
 
-    public static Observable<RssItem> events(final InputStream source) {
+    static Observable<RssItem> InputStreamToObservable(final ParcelFileDescriptor source) {
         return Observable.create(new ObservableOnSubscribe<RssItem>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<RssItem> e) throws Exception {
                 try {
-                    InputStreamReader isr = new InputStreamReader(source);
+                    InputStream os = new ParcelFileDescriptor.AutoCloseInputStream(source);
+                    InputStreamReader isr = new InputStreamReader(os);
                     BufferedReader br = new BufferedReader(isr);
                     JsonReader reader = new JsonReader(br);
 
@@ -229,6 +229,8 @@ public class RssItemObservable implements Publisher<Integer> {
                         reader.close();
                         br.close();
                         isr.close();
+                        os.close();
+                        source.close();
                     }
                 } catch (IOException err) {
                     err.printStackTrace();
