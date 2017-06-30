@@ -616,7 +616,7 @@ public class NewsReaderListActivity extends PodcastFragmentActivity implements
 		if(mPrefs.getString(SettingsActivity.EDT_OWNCLOUDROOTPATH_STRING, null) == null)
 			StartLoginFragment(this);
 		else {
-			if (!ownCloudSyncService.isSyncRunning())
+			if (ownCloudSyncService != null && !ownCloudSyncService.isSyncRunning())
 			{
 				new PostDelayHandler(this).stopRunningPostDelayHandler();//Stop pending sync handler
 
