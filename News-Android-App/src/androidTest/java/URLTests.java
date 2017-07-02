@@ -13,59 +13,12 @@ import java.util.List;
 import java.util.Map;
 
 import de.luhmer.owncloudnewsreader.NewsReaderListActivity;
-import de.luhmer.owncloudnewsreader.reader.FeedItemTags;
-import de.luhmer.owncloudnewsreader.reader.owncloud.API;
 import okhttp3.HttpUrl;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class URLTests extends ActivityInstrumentationTestCase2<NewsReaderListActivity> {
 
-    private class TestAPI extends API {
-
-        public TestAPI(HttpUrl baseUrl) {
-            super(baseUrl);
-        }
-
-        @Override
-        public HttpUrl getItemUrl() {
-            return null;
-        }
-
-        @Override
-        public HttpUrl getItemUpdatedUrl() {
-            return null;
-        }
-
-        @Override
-        public HttpUrl getFeedUrl() {
-            return null;
-        }
-
-        @Override
-        public HttpUrl getFolderUrl() {
-            return null;
-        }
-
-        @Override
-        public HttpUrl getUserUrl() {
-            return null;
-        }
-
-        @Override
-        public HttpUrl getTagBaseUrl() {
-            return null;
-        }
-
-        @Override
-        public boolean PerformTagExecution(List<String> itemIds, FeedItemTags tag, Context context) {
-            return false;
-        }
-
-        public HttpUrl getApiUrl(String format, String... urlSegments) {
-            return getAPIUrl(format, urlSegments);
-        }
-    }
     private NewsReaderListActivity mActivity;
 
     public URLTests() {
@@ -78,7 +31,7 @@ public class URLTests extends ActivityInstrumentationTestCase2<NewsReaderListAct
         injectInstrumentation(InstrumentationRegistry.getInstrumentation());
         mActivity = getActivity();
 
-        HttpJsonRequest.init(mActivity);
+
     }
 
     @Test
@@ -92,11 +45,6 @@ public class URLTests extends ActivityInstrumentationTestCase2<NewsReaderListAct
         testUrls.put("https://test.com/subfolder", HttpUrl.parse("https://test.com/subfolder/test1/test2/test3"));
         testUrls.put("https://test.com/subfolder/", HttpUrl.parse("https://test.com/subfolder/test1/test2/test3"));
 
-        for(Map.Entry<String, HttpUrl> testUrlEntry: testUrls.entrySet()) {
-            HttpJsonRequest.getInstance().setCredentials("test", "test", testUrlEntry.getKey());
-            TestAPI api = new TestAPI(HttpJsonRequest.getInstance().getRootUrl());
-            HttpUrl apiUrl = api.getApiUrl(null, "./test1/test2", "test3");
-            assertTrue(apiUrl.equals(testUrlEntry.getValue()));
-        }
+
     }
 }

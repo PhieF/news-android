@@ -2,11 +2,8 @@ package de.luhmer.owncloudnewsreader.ssl;
 
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
-import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -23,26 +20,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
-import de.luhmer.owncloud.accountimporter.helper.NextcloudRequest;
 import de.luhmer.owncloudnewsreader.SettingsActivity;
-import de.luhmer.owncloudnewsreader.database.model.Feed;
-import de.luhmer.owncloudnewsreader.database.model.Folder;
-import de.luhmer.owncloudnewsreader.database.model.RssItem;
-import de.luhmer.owncloudnewsreader.model.NextcloudNewsVersion;
-import de.luhmer.owncloudnewsreader.model.UserInfo;
 import okhttp3.Credentials;
-import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 import okhttp3.logging.HttpLoggingInterceptor;
-import okio.BufferedSource;
 
 /**
  * Created by david on 26.05.17.

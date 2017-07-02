@@ -1,5 +1,7 @@
 package de.luhmer.owncloudnewsreader.reader.nextcloud;
 
+import android.os.RemoteException;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -44,20 +46,21 @@ public class ItemStateSync {
             return true;
         }
 
-        switch(tag) {
-            case MARK_ITEM_AS_READ:
-                return API_Nextcloud.markItemsRead(new ItemIds(itemIds));
-                //return api.markItemsRead(new ItemIds(itemIds)).execute().isSuccessful();
-            case MARK_ITEM_AS_UNREAD:
-                return API_Nextcloud.markItemsUnread(new ItemIds(itemIds));
-                //return api.markItemsUnread(new ItemIds(itemIds)).execute().isSuccessful();
-            case MARK_ITEM_AS_STARRED:
-                return API_Nextcloud.markItemsStarred(new ItemIds(itemIds));
-                //return api.markItemsStarred(new ItemMap(itemIds, dbConn)).execute().isSuccessful();
-            case MARK_ITEM_AS_UNSTARRED:
-                return API_Nextcloud.markItemsUnstarred(new ItemIds(itemIds));
-                //return api.markItemsUnstarred(new ItemMap(itemIds, dbConn)).execute().isSuccessful();
+        try {
+            switch(tag) {
+                case MARK_ITEM_AS_READ:
+                    return api.markItemsRead(new ItemIds(itemIds));
+                case MARK_ITEM_AS_UNREAD:
+                    return api.markItemsUnread(new ItemIds(itemIds));
+                case MARK_ITEM_AS_STARRED:
+                    return api.markItemsStarred(new ItemMap(itemIds, dbConn));
+                case MARK_ITEM_AS_UNSTARRED:
+                    return api.markItemsUnstarred(new ItemMap(itemIds, dbConn));
+            }
+            return true;
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            return false;
         }
-        return false;
     }
 }

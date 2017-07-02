@@ -46,7 +46,6 @@ import javax.inject.Inject;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import de.luhmer.owncloud.accountimporter.helper.NextcloudAPI;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
 import de.luhmer.owncloudnewsreader.database.model.Feed;
 import de.luhmer.owncloudnewsreader.database.model.Folder;
@@ -56,13 +55,8 @@ import de.luhmer.owncloudnewsreader.helper.FileUtils;
 import de.luhmer.owncloudnewsreader.helper.OpmlXmlParser;
 import de.luhmer.owncloudnewsreader.helper.ThemeChooser;
 import de.luhmer.owncloudnewsreader.helper.URLConnectionReader;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.API;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
 import de.luhmer.owncloudnewsreader.ssl.OkHttpSSLClient;
 import io.reactivex.functions.Consumer;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class NewFeedActivity extends AppCompatActivity {
 
@@ -229,7 +223,7 @@ public class NewFeedActivity extends AppCompatActivity {
                 final HashMap<String, Long> existingFolders = new HashMap<>();
 
                 //mApi.getAPI().folders().blockingSubscribe(new Consumer<List<Folder>>() {
-                API_Nextcloud.GetFolders().blockingSubscribe(new Consumer<List<Folder>>() {
+                mApi.getAPI().getFolders().blockingSubscribe(new Consumer<List<Folder>>() {
                     @Override
                     public void accept(@io.reactivex.annotations.NonNull List<Folder> folders) throws Exception {
                         for(Folder folder : folders) {
@@ -249,7 +243,7 @@ public class NewFeedActivity extends AppCompatActivity {
                             final Map<String, Object> folderMap = new HashMap<>(2);
                             folderMap.put("name", folderName);
                             //Folder folder = mApi.getAPI().createFolder(folderMap).execute().body().get(0);
-                            Folder folder = API_Nextcloud.createFolder(folderMap);
+                            Folder folder = mApi.getAPI().createFolder(folderMap);
                             //TODO test this!!!
                             existingFolders.put(folder.getLabel(), folder.getId()); //Add folder to list of existing folder in order to prevent that the method tries to create it multiple times
                         }
@@ -259,8 +253,7 @@ public class NewFeedActivity extends AppCompatActivity {
                     feedMap.put("url", feedUrl);
                     feedMap.put("folderId", folderId);
                     //Feed feed = mApi.getAPI().createFeed(feedMap).execute().body().get(0);
-                    Feed feed = API_Nextcloud.createFeed(feedMap);
-                    //TODO check above!
+                    mApi.getAPI().createFeed(feedMap).subscribe(); //TODO check before release (if opml import is working correctly) !!!
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -339,34 +332,35 @@ public class NewFeedActivity extends AppCompatActivity {
             final Map<String, Object> feedMap = new HashMap<>(2);
             feedMap.put("url", urlToFeed);
             feedMap.put("folderId", folder.getId());
-            // TODO WE NEED THE CODE BELOW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            //mApi.getAPI().createFeed(feedMap).enqueue(new Callback<List<Feed>>() {
-            /*
-            API_Nextcloud.createFeed(feedMap).enqueue(new Callback<List<Feed>>() {
+
+            mApi.getAPI().createFeed(feedMap).subscribe(new Consumer<List<Feed>>() {
                 @Override
-                public void onResponse(Call<List<Feed>> call, Response<List<Feed>> response) {
+                public void accept(@io.reactivex.annotations.NonNull List<Feed> feeds) throws Exception {
                     showProgress(false);
 
-                    if (response.isSuccessful()) {
-                        Intent returnIntent = new Intent();
-                        returnIntent.putExtra("success", true);
-                        setResult(RESULT_OK,returnIntent);
+                    //if (response.isSuccessful()) {
+                    Intent returnIntent = new Intent();
+                    returnIntent.putExtra("success", true);
+                    setResult(RESULT_OK, returnIntent);
 
-                        finish();
+                    finish();
+
+                    //TODO handle some edge cases here... API currently does not provide enough information
+                    /*
                     } else {
                         mFeedUrlView.setError(getString(R.string.login_dialog_text_something_went_wrong));
                         mFeedUrlView.requestFocus();
-                    }
+                    }*/
                 }
-
+            }, new Consumer<Throwable>() {
                 @Override
-                public void onFailure(Call<List<Feed>> call, Throwable t) {
+                public void accept(@io.reactivex.annotations.NonNull Throwable throwable) throws Exception {
                     showProgress(false);
 
-                    mFeedUrlView.setError(getString(R.string.login_dialog_text_something_went_wrong) + " - " + OkHttpSSLClient.HandleExceptions((Exception) t).getMessage());
+                    mFeedUrlView.setError(getString(R.string.login_dialog_text_something_went_wrong) + " - " + OkHttpSSLClient.HandleExceptions((Exception) throwable).getMessage());
                     mFeedUrlView.requestFocus();
                 }
-            });*/
+            });
         }
     }
     private boolean isUrlValid(String url) {

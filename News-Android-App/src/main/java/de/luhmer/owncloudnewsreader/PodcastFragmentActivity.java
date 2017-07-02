@@ -42,8 +42,6 @@ import javax.inject.Inject;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
-import de.luhmer.owncloud.accountimporter.helper.NextcloudAPI;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
 import de.luhmer.owncloudnewsreader.database.model.RssItem;
 import de.luhmer.owncloudnewsreader.di.ApiProvider;
@@ -52,7 +50,6 @@ import de.luhmer.owncloudnewsreader.events.podcast.RegisterVideoOutput;
 import de.luhmer.owncloudnewsreader.events.podcast.RegisterYoutubeOutput;
 import de.luhmer.owncloudnewsreader.events.podcast.UpdatePodcastStatusEvent;
 import de.luhmer.owncloudnewsreader.events.podcast.VideoDoubleClicked;
-import de.luhmer.owncloudnewsreader.helper.GsonConfig;
 import de.luhmer.owncloudnewsreader.helper.SizeAnimator;
 import de.luhmer.owncloudnewsreader.helper.TeslaUnreadManager;
 import de.luhmer.owncloudnewsreader.interfaces.IPlayPausePodcastClicked;
@@ -61,7 +58,6 @@ import de.luhmer.owncloudnewsreader.model.PodcastItem;
 import de.luhmer.owncloudnewsreader.services.PodcastDownloadService;
 import de.luhmer.owncloudnewsreader.services.PodcastPlaybackService;
 import de.luhmer.owncloudnewsreader.services.podcast.PlaybackService;
-import de.luhmer.owncloudnewsreader.ssl.MemorizingTrustManager;
 import de.luhmer.owncloudnewsreader.view.PodcastSlidingUpPanelLayout;
 import de.luhmer.owncloudnewsreader.view.ZoomableRelativeLayout;
 import de.luhmer.owncloudnewsreader.widget.WidgetProvider;
@@ -73,8 +69,6 @@ public class PodcastFragmentActivity extends AppCompatActivity implements IPlayP
 
     @Inject SharedPreferences mPrefs;
     @Inject ApiProvider mApi;
-    @Inject public MemorizingTrustManager mMTM;
-
 
     private PodcastPlaybackService mPodcastPlaybackService;
     private boolean mBound = false;
@@ -109,16 +103,10 @@ public class PodcastFragmentActivity extends AppCompatActivity implements IPlayP
     @Override
     protected void onStart() {
         super.onStart();
-        ((NewsReaderApplication)getApplication()).acquireBinding();
-        mMTM.bindDisplayActivity(this);
     }
 
     @Override
     protected void onStop() {
-        mMTM.unbindDisplayActivity(this);
-
-        ((NewsReaderApplication)getApplication()).releaseBinding();
-
         super.onStop();
         unbindPodcastService();
     }

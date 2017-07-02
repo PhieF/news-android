@@ -29,12 +29,10 @@ import java.util.concurrent.Callable;
 
 import javax.inject.Inject;
 
-import de.luhmer.owncloud.accountimporter.helper.NextcloudAPI;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
 import de.luhmer.owncloudnewsreader.di.ApiProvider;
 import de.luhmer.owncloudnewsreader.helper.FavIconHandler;
 import de.luhmer.owncloudnewsreader.helper.ThemeChooser;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
 import io.reactivex.Completable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
@@ -229,8 +227,7 @@ public class NewsReaderListDialogFragment extends DialogFragment{
                     public Boolean call() throws Exception {
                         Map<String, String> feedTitleMap = new LinkedHashMap<>();
                         feedTitleMap.put("feedTitle", mFeedName.getText().toString());
-                        //mApi.getAPI().renameFeed(feedId, feedTitleMap);
-                        API_Nextcloud.renameFeed(feedId, feedTitleMap);
+                        mApi.getAPI().renameFeed(feedId, feedTitleMap);
                         return true;
                     }
                 })
@@ -279,8 +276,7 @@ public class NewsReaderListDialogFragment extends DialogFragment{
                 Completable.fromCallable(new Callable<Boolean>() {
                             @Override
                             public Boolean call() throws Exception {
-                                //mApi.getAPI().deleteFeed(feedId);
-                                API_Nextcloud.deleteFeed(feedId);
+                                mApi.getAPI().deleteFeed(feedId);
                                 return true;
                             }
                         })

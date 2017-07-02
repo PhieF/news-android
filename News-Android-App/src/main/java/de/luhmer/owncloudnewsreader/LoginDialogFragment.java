@@ -28,7 +28,6 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
@@ -40,7 +39,6 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
-import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,19 +52,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 
 import javax.inject.Inject;
 
@@ -78,23 +65,14 @@ import de.luhmer.owncloud.accountimporter.helper.SingleAccount;
 import de.luhmer.owncloud.accountimporter.interfaces.IAccountImport;
 import de.luhmer.owncloudnewsreader.authentication.AuthenticatorActivity;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
-import de.luhmer.owncloudnewsreader.database.model.Feed;
-import de.luhmer.owncloudnewsreader.database.model.Folder;
-import de.luhmer.owncloudnewsreader.database.model.RssItem;
 import de.luhmer.owncloudnewsreader.di.ApiProvider;
-import de.luhmer.owncloudnewsreader.helper.GsonConfig;
 import de.luhmer.owncloudnewsreader.model.NextcloudNewsVersion;
-import de.luhmer.owncloudnewsreader.model.UserInfo;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.API_Nextcloud;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.NextcloudDeserializer;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.Types;
 import de.luhmer.owncloudnewsreader.ssl.OkHttpSSLClient;
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.HttpUrl;
 
 /**
  * Activity which displays a login screen to the user, offering registration as
@@ -402,7 +380,7 @@ public class LoginDialogFragment extends DialogFragment implements IAccountImpor
 
 
 			//mApi.getAPI().version()
-            API_Nextcloud.GetNextcloudNewsVersion()
+            mApi.getAPI().getNextcloudNewsVersion()
 					.subscribeOn(Schedulers.newThread())
 					.observeOn(AndroidSchedulers.mainThread())
 					.subscribe(new Observer<NextcloudNewsVersion>() {

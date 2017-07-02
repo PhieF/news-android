@@ -4,15 +4,13 @@ import android.app.Application;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
-import de.luhmer.owncloudnewsreader.ssl.MemorizingTrustManager;
+import de.luhmer.owncloudnewsreader.helper.GsonConfig;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 
@@ -56,9 +54,7 @@ public class ApiModule {
     @Provides
     @Singleton
     Gson provideGson() {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES);
-        return gsonBuilder.create();
+        return GsonConfig.GetGson();
     }
 
     @Provides
@@ -69,30 +65,10 @@ public class ApiModule {
         return client;
     }
 
-
-    /*
     @Provides
     @Singleton
-    Retrofit provideRetrofit(String baseUrl, Gson gson, OkHttpClient okHttpClient) {
-        Retrofit retrofit = new Retrofit.Builder()
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .baseUrl(baseUrl)
-                .client(okHttpClient)
-                .build();
-        return retrofit;
-    }
-    */
-
-    @Provides
-    @Singleton
-    MemorizingTrustManager provideMTM() {
-        return new MemorizingTrustManager(mApplication);
-    }
-
-    @Provides
-    @Singleton
-    ApiProvider provideAPI(MemorizingTrustManager mtm, SharedPreferences sp) {
-        return new ApiProvider(mtm, sp, mApplication);
+    ApiProvider provideAPI(SharedPreferences sp, Gson gson) {
+        return new ApiProvider(sp, gson, mApplication);
     }
 
 }

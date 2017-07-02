@@ -3,44 +3,21 @@ package de.luhmer.owncloudnewsreader.di;
 import android.accounts.Account;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
-import android.util.Log;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.reflect.TypeToken;
 import com.nostra13.universalimageloader.cache.disc.naming.Md5FileNameGenerator;
 import com.nostra13.universalimageloader.core.DisplayImageOptions;
 import com.nostra13.universalimageloader.core.ImageLoader;
 import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 
-import java.lang.reflect.Type;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
-import de.luhmer.owncloud.accountimporter.helper.SingleAccount;
+import de.luhmer.owncloud.accountimporter.helper.NextcloudAPI;
 import de.luhmer.owncloudnewsreader.SettingsActivity;
-import de.luhmer.owncloudnewsreader.database.model.Feed;
-import de.luhmer.owncloudnewsreader.database.model.Folder;
-import de.luhmer.owncloudnewsreader.database.model.RssItem;
-import de.luhmer.owncloudnewsreader.model.UserInfo;
 import de.luhmer.owncloudnewsreader.reader.OkHttpImageDownloader;
 import de.luhmer.owncloudnewsreader.reader.nextcloud.API;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.NextcloudDeserializer;
-import de.luhmer.owncloudnewsreader.reader.nextcloud.Types;
-import de.luhmer.owncloudnewsreader.ssl.MemorizingTrustManager;
-import de.luhmer.owncloudnewsreader.ssl.OkHttpSSLClient;
-import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Created by david on 26.05.17.
@@ -48,13 +25,15 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiProvider {
 
-    private final MemorizingTrustManager mMemorizingTrustManager;
     private final SharedPreferences mPrefs;
-    private API mApi;
     private Context context;
+    private Gson gson;
+    private API mApi;
+    private final AtomicInteger refCount = new AtomicInteger(); // Count references for service
 
-    public ApiProvider(MemorizingTrustManager mtm, SharedPreferences sp, Context context) {
-        this.mMemorizingTrustManager = mtm;
+
+    public ApiProvider(SharedPreferences sp, Gson gson, Context context) {
+        this.gson = gson;
         this.mPrefs = sp;
         this.context = context;
         initApi();
@@ -66,90 +45,27 @@ public class ApiProvider {
     }
 
     public boolean initApi(Account account) {
-        try {
-            SingleAccount singleAccount = AccountImporter.BlockingGetAuthToken(context, account);
-            String username   = singleAccount.username;
-            String password   = singleAccount.password;
-            String baseUrlStr = singleAccount.url;
-
-            HttpUrl baseUrl = HttpUrl.parse(baseUrlStr).newBuilder()
-                    .addPathSegments("index.php/apps/news/api/v1-2/")
-                    .build();
-
-            Log.d("ApiModule", "HttpUrl: " + baseUrl.toString());
-
-            setUpRetrofit(baseUrl, username, password);
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            //Toast.makeText(context, e.getMessage(), Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-
-        //TODO we need to update the OkHttpSSLClient to read the CB_DISABLE_HOSTNAME_VERIFICATION_STRING variable from the new account as well!
-
-        /*
-        String username   = mPrefs.getString(SettingsActivity.EDT_USERNAME_STRING, "");
-        String password   = mPrefs.getString(SettingsActivity.EDT_PASSWORD_STRING, "");
-        String baseUrlStr = mPrefs.getString(SettingsActivity.EDT_OWNCLOUDROOTPATH_STRING, "https://luhmer.de"); // We need to provide some sort of default URL here..
-        HttpUrl baseUrl = HttpUrl.parse(baseUrlStr).newBuilder()
-                .addPathSegments("index.php/apps/news/api/v1-2/")
-                .build();
-
-        Log.d("ApiModule", "HttpUrl: " + baseUrl.toString());
-
-        setUpRetrofit(baseUrl, username, password);
-        */
-    }
-
-    private void setUpRetrofit(HttpUrl baseUrl, String username, String password) {
-        Type feedList = new TypeToken<List<Feed>>() {}.getType();
-        Type folderList = new TypeToken<List<Folder>>() {}.getType();
-        Type rssItemsList = new TypeToken<List<RssItem>>() {}.getType();
-
-        // Info: RssItems are handled as a stream (to be more memory efficient - see @OwnCloudSyncService and @RssItemObservable)
-        Gson gson = new GsonBuilder()
-                .setLenient()
-                .registerTypeAdapter(folderList,   new NextcloudDeserializer<>(Types.FOLDERS.toString(), Folder.class))
-                .registerTypeAdapter(feedList,     new NextcloudDeserializer<>(Types.FEEDS.toString(), Feed.class))
-                .registerTypeAdapter(rssItemsList, new NextcloudDeserializer<>(Types.ITEMS.toString(), RssItem.class))
-                .registerTypeAdapter(UserInfo.class, new JsonDeserializer<UserInfo>() {
-                    @Override
-                    public UserInfo deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-                        try {
-                            JsonObject jObj = json.getAsJsonObject();
-                            JsonElement avatar = jObj.get("avatar");
-                            byte[] decodedString = {};
-                            if (!avatar.isJsonNull()) {
-                                decodedString = Base64.decode(avatar.getAsJsonObject().get("data").getAsString(), Base64.DEFAULT);
-                            }
-                            return new UserInfo.Builder()
-                                    .setDisplayName(jObj.get("displayName").getAsString())
-                                    .setUserId(jObj.get("userId").getAsString())
-                                    .setAvatar(BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length))
-                                    .setLastLoginTimestamp(jObj.get("lastLoginTimestamp").getAsLong())
-                                    .build();
-                        } catch(IllegalStateException ex) {
-                            throw OkHttpSSLClient.HandleExceptions(ex);
-                        }
-                    }
-                })
-                .create();
-
-        OkHttpClient client = OkHttpSSLClient.GetSslClient(baseUrl, username, password, mPrefs, mMemorizingTrustManager);
-        Retrofit retrofit = new Retrofit.Builder()
-                .addConverterFactory(GsonConverterFactory.create(gson))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .baseUrl(baseUrl)
-                .client(client)
-                .build();
-
+        OkHttpClient client = new OkHttpClient.Builder().build();
         initImageLoader(mPrefs, client, context);
 
-        mApi = retrofit.create(API.class);
+        mApi = new API(new NextcloudAPI(account, gson));
+        acquireBinding();
+        return true;
     }
+
+    public void acquireBinding() {
+        mApi.getNextcloudAPI().start(context);
+        refCount.incrementAndGet();
+    }
+
+    public void releaseBinding() {
+        if (refCount.get() == 0 || refCount.decrementAndGet() == 0) {
+            // release binding
+            mApi.getNextcloudAPI().stop(context);
+        }
+    }
+
+
 
     private void initImageLoader(SharedPreferences mPrefs, OkHttpClient okHttpClient, Context context) {
         int diskCacheSize = Integer.parseInt(mPrefs.getString(SettingsActivity.SP_MAX_CACHE_SIZE,"500"))*1024*1024;

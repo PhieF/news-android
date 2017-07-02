@@ -2,6 +2,7 @@ package de.luhmer.owncloudnewsreader.reader.nextcloud;
 
 import android.content.SharedPreferences;
 import android.os.ParcelFileDescriptor;
+import android.os.RemoteException;
 import android.util.Log;
 
 import com.google.gson.JsonObject;
@@ -12,16 +13,12 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.luhmer.owncloud.accountimporter.helper.AccountImporter;
 import de.luhmer.owncloudnewsreader.Constants;
 import de.luhmer.owncloudnewsreader.database.DatabaseConnectionOrm;
 import de.luhmer.owncloudnewsreader.database.model.RssItem;
@@ -29,13 +26,9 @@ import de.luhmer.owncloudnewsreader.reader.FeedItemTags;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
-import okhttp3.ResponseBody;
-import okio.BufferedSource;
 
 /**
  * onNext returns the current amount of synced items
@@ -65,7 +58,7 @@ public class RssItemObservable implements Publisher<Integer> {
         }
     }
 
-    public void sync(Subscriber<? super Integer> subscriber) throws IOException {
+    public void sync(Subscriber<? super Integer> subscriber) throws IOException, RemoteException {
 
         mDbConn.clearDatabaseOverSize();
 
@@ -90,7 +83,7 @@ public class RssItemObservable implements Publisher<Integer> {
             do {
                 Log.v(TAG, "offset=" + offset + ",  requestCount=" + requestCount + "");
                 //List<RssItem> buffer = (mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true).execute().body());
-                List<RssItem> buffer = API_Nextcloud.GetRssItems(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true);
+                List<RssItem> buffer = mApi.getRssItems(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true);
                 //List<RssItem> buffer = (mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL.toString()), 0, false, true).execute().body());
 
                 requestCount = 0;
@@ -114,7 +107,7 @@ public class RssItemObservable implements Publisher<Integer> {
 
             do {
                 offset = mDbConn.getLowestItemId(true);
-                List<RssItem> buffer = API_Nextcloud.GetRssItems(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL_STARRED.toString()), 0, false, true);
+                List<RssItem> buffer = mApi.getRssItems(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL_STARRED.toString()), 0, false, true);
                 //List<RssItem> buffer = mApi.items(maxSyncSize, offset, Integer.valueOf(FeedItemTags.ALL_STARRED.toString()), 0, false, true).execute().body();
 
                 requestCount = 0;
@@ -148,7 +141,7 @@ public class RssItemObservable implements Publisher<Integer> {
                 })
             */
 
-            ParcelFileDescriptor is = API_Nextcloud.UpdatedItems(lastModified+1, Integer.valueOf(FeedItemTags.ALL.toString()), highestItemIdBeforeSync);
+            ParcelFileDescriptor is = mApi.updatedItems(lastModified+1, Integer.valueOf(FeedItemTags.ALL.toString()), highestItemIdBeforeSync);
             InputStreamToObservable(is)
                     .subscribe(new Observer<RssItem>() {
                         int totalUpdatedUnreadItemCount = 0;
