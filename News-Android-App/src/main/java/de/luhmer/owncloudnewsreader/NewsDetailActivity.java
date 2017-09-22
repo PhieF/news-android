@@ -81,14 +81,13 @@ public class NewsDetailActivity extends PodcastFragmentActivity {
 	 * {@link android.support.v4.app.FragmentStatePagerAdapter}.
 	 */
 	SectionsPagerAdapter mSectionsPagerAdapter;
-    @Bind(R.id.toolbar) Toolbar toolbar;
 	@Bind(R.id.progressIndicator) ProgressBar progressIndicator;
 
 	/**
 	 * The {@link ViewPager} that will host the section contents.
 	 */
 	public ViewPager mViewPager;
-	private int currentPosition;
+	public int currentPosition;
 
 	private PostDelayHandler pDelayHandler;
 
@@ -112,18 +111,13 @@ public class NewsDetailActivity extends PodcastFragmentActivity {
 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_news_detail);
-
         ButterKnife.bind(this);
 
-        if (toolbar != null) {
-            setSupportActionBar(toolbar);
-        }
 
 		pDelayHandler = new PostDelayHandler(this);
 
 		dbConn = new DatabaseConnectionOrm(this);
 		Intent intent = getIntent();
-
 		//long subsciption_id = -1;
 		//long folder_id = -1;
 		int item_id = 0;
@@ -135,12 +129,13 @@ public class NewsDetailActivity extends PodcastFragmentActivity {
 		//	folder_id = intent.getExtras().getLong(NewsReaderDetailActivity.FOLDER_ID);
 		if(intent.hasExtra(NewsReaderListActivity.ITEM_ID))
 			item_id = intent.getExtras().getInt(NewsReaderListActivity.ITEM_ID);
-		if(intent.hasExtra(NewsReaderListActivity.TITEL))
-			getSupportActionBar().setTitle(intent.getExtras().getString(NewsReaderListActivity.TITEL));
+	//	if(intent.hasExtra(NewsReaderListActivity.TITEL))
+		//	getSupportActionBar().setTitle(intent.getExtras().getString(NewsReaderListActivity.TITEL));
 			//getActionBar().setTitle(intent.getExtras().getString(NewsReaderDetailActivity.TITEL));
 
-		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+	//	getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+		//getSupportActionBar().hide();
 
 		//if(intent.hasExtra(DATABASE_IDS_OF_ITEMS))
 		//	databaseItemIds = intent.getIntegerArrayListExtra(DATABASE_IDS_OF_ITEMS);
@@ -153,7 +148,7 @@ public class NewsDetailActivity extends PodcastFragmentActivity {
             long rss_item_id = intent.getExtras().getLong(WidgetProvider.RSS_ITEM_ID);
             for(RssItem rssItem : rssItems) {
                 if(rss_item_id == rssItem.getId()) {
-                    getSupportActionBar().setTitle(rssItem.getTitle());
+                  //  getSupportActionBar().setTitle(rssItem.getTitle());
                     break;
                 }
                 else
@@ -277,12 +272,13 @@ public class NewsDetailActivity extends PodcastFragmentActivity {
 
 	private void PageChanged(int position)
 	{
+
 		StopVideoOnCurrentPage();
 		currentPosition = position;
 		ResumeVideoPlayersOnCurrentPage();
 		progressIndicator.setProgress(position + 1);
 
-        getSupportActionBar().setTitle(rssItems.get(position).getTitle());
+    //    getSupportActionBar().setTitle(rssItems.get(position).getTitle());
 
 		if(!rssItems.get(position).getRead_temp())
 		{

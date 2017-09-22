@@ -30,6 +30,7 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.Toolbar;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -81,11 +82,13 @@ public class NewsDetailFragment extends Fragment {
 	@Bind(R.id.webview) WebView mWebView;
     @Bind(R.id.progressBarLoading) ProgressBar mProgressBarLoading;
 	@Bind(R.id.progressbar_webview) ProgressBar mProgressbarWebView;
+    @Bind(R.id.toolbar) Toolbar toolbar;
 
 
 	private int section_number;
     public List<String> urls = new ArrayList<>();
     protected String html;
+    private boolean mLoadWebPage = true;
 
 
     public NewsDetailFragment() {
@@ -130,6 +133,13 @@ public class NewsDetailFragment extends Fragment {
         if(mWebView != null) {
             mWebView.onResume();
             mWebView.resumeTimers();
+            NewsDetailActivity ndActivity = ((NewsDetailActivity) getActivity());
+            if(section_number == ndActivity.currentPosition) {
+                ndActivity.setSupportActionBar(toolbar);
+                ndActivity.invalidateOptionsMenu();
+            }
+
+
         }
     }
 
@@ -138,10 +148,10 @@ public class NewsDetailFragment extends Fragment {
     @Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.fragment_news_detail, container, false);
-
 		section_number = (Integer) getArguments().get(ARG_SECTION_NUMBER);
-
         ButterKnife.bind(this, rootView);
+        NewsDetailActivity ndActivity = ((NewsDetailActivity) getActivity());
+        toolbar.setTitle(ndActivity.rssItems.get(section_number).getTitle());
 
         startLoadRssItemToWebViewTask();
 
@@ -166,7 +176,7 @@ public class NewsDetailFragment extends Fragment {
 
             init_webView();
 
-            mWebView.setVisibility(View.GONE);
+            //mWebView.setVisibility(View.GONE);
             mProgressBarLoading.setVisibility(View.VISIBLE);
 
             super.onPreExecute();
@@ -174,6 +184,8 @@ public class NewsDetailFragment extends Fragment {
 
         @Override
         protected String doInBackground(Void... voids) {
+            if(mLoadWebPage)
+                return null;
             NewsDetailActivity ndActivity = ((NewsDetailActivity)getActivity());
 
             RssItem rssItem = ndActivity.rssItems.get(section_number);
@@ -184,12 +196,17 @@ public class NewsDetailFragment extends Fragment {
         @Override
         protected void onPostExecute(String htmlPage) {
             mWebView.setVisibility(View.VISIBLE);
-            mProgressBarLoading.setVisibility(View.GONE);
-
-            SetSoftwareRenderModeForWebView(htmlPage, mWebView);
-
-            html = htmlPage;
-            mWebView.loadDataWithBaseURL("file:///android_asset/", htmlPage, "text/html", "UTF-8", "");
+            if(mLoadWebPage) {
+                NewsDetailActivity ndActivity = ((NewsDetailActivity) getActivity());
+                RssItem rssItem = ndActivity.rssItems.get(section_number);
+                mWebView.loadUrl(rssItem.getLink());
+            }
+            else {
+                SetSoftwareRenderModeForWebView(htmlPage, mWebView);
+                html = htmlPage;
+                mProgressBarLoading.setVisibility(View.GONE);
+                mWebView.loadDataWithBaseURL("file:///android_asset/", htmlPage, "text/html", "UTF-8", "");
+            }
             super.onPostExecute(htmlPage);
         }
     }
@@ -269,6 +286,10 @@ public class NewsDetailFragment extends Fragment {
 
 
         mWebView.setWebViewClient(new WebViewClient() {
+            public void onPageFinished(WebView view, String url) {
+                mProgressBarLoading.setVisibility(View.GONE);
+                mProgressbarWebView.setVisibility(View.GONE);
+            }
 
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -302,7 +323,8 @@ public class NewsDetailFragment extends Fragment {
 
 
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        if (v instanceof WebView) {
+
+        if (v instanceof WebView && !mLoadWebPage) {
             WebView.HitTestResult result = ((WebView) v).getHitTestResult();
             if (result != null) {
                 int type = result.getType();
