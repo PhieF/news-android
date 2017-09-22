@@ -129,6 +129,7 @@
     <item>Etendue</item>
     <item>Etendue (texte complet)</item>
     <item>Etendue avec Webview</item>
+    <item>Etendue avec Cardview</item>
   </string-array>
   <string-array name="pref_title_lines_count">
     <item>1</item>
